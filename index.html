@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>StudyAI</title>
+
+<style>
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f4f6fb;
+  color:#171b2d;
+}
+
+header{
+  background:#5b5ce2;
+  color:white;
+  padding:18px;
+  text-align:center;
+  font-size:26px;
+  font-weight:bold;
+}
+
+.container{
+  width:94%;
+  max-width:900px;
+  margin:20px auto;
+}
+
+.card{
+  background:white;
+  padding:18px;
+  margin-bottom:15px;
+  border-radius:18px;
+  box-shadow:0 5px 20px #0001;
+}
+
+select,
+textarea,
+button{
+  width:100%;
+  padding:13px;
+  margin-top:10px;
+  border-radius:12px;
+  font-size:16px;
+}
+
+select,
+textarea{
+  border:1px solid #ddd;
+  background:white;
+}
+
+textarea{
+  height:150px;
+  resize:vertical;
+}
+
+button{
+  border:0;
+  background:#5b5ce2;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button:active{
+  transform:scale(.98);
+}
+
+.subjects{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+}
+
+.subject{
+  background:#f0f1ff;
+  color:#333;
+  padding:15px;
+  border-radius:12px;
+  text-align:center;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.subject.active{
+  background:#5b5ce2;
+  color:white;
+}
+
+.answer{
+  line-height:1.7;
+}
+
+.answer h2{
+  color:#5b5ce2;
+}
+
+.box{
+  background:#f5f6fa;
+  padding:14px;
+  border-radius:12px;
+  margin:10px 0;
+}
+
+.final{
+  background:#e9fff4;
+  padding:14px;
+  border-radius:12px;
+  margin-top:10px;
+}
+
+.example{
+  background:#fff8df;
+  padding:14px;
+  border-radius:12px;
+  margin-top:10px;
+}
+
+@media(max-width:500px){
+  .subjects{
+    grid-template-columns:1fr 1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+📚 StudyAI
+</header>
+
+<div class="container">
+
+<div class="card">
+<h2>🎓 Study Assistant</h2>
+<p>
+Ask your question in English, Roman Urdu, or mixed English + Roman Urdu.
+</p>
+
+<div class="subjects">
+
+<div class="subject active" onclick="setSubject('English',this)">
+📖 English
+</div>
+
+<div class="subject" onclick="setSubject('Math',this)">
+📐 Math
+</div>
+
+<div class="subject" onclick="setSubject('Science',this)">
+🔬 Science
+</div>
+
+<div class="subject" onclick="setSubject('Computer',this)">
+💻 Computer
+</div>
+
+</div>
+
+<select id="class">
+<option>Class 1</option>
+<option>Class 2</option>
+<option>Class 3</option>
+<option>Class 4</option>
+<option>Class 5</option>
+<option>Class 6</option>
+<option>Class 7</option>
+<option>Class 8</option>
+<option>Class 9</option>
+<option>Class 10</option>
+</select>
+
+<textarea id="question"
+placeholder="Example:
+OS kya hai?
+Digestive system kaise kaam karta hai?
+Make a sentence of city
+2x + 5 = 15"></textarea>
+
+<button onclick="ask()">🧠 Ask StudyAI</button>
+
+</div>
+
+<div class="card" id="answerBox" style="display:none">
+
+<h2>💡 Answer</h2>
+
+<div id="answer" class="answer"></div>
+
+</div>
+
+</div>
+
+
+<script>
+
+let selectedSubject="English";
+
+
+/* SUBJECT */
+
+function setSubject(subject,element){
+
+selectedSubject=subject;
+
+document
+.querySelectorAll(".subject")
+.forEach(x=>x.classList.remove("active"));
+
+element.classList.add("active");
+
+}
+
+
+/* CLEAN TEXT */
+
+function clean(text){
+
+return text
+.toLowerCase()
+.replace(/[?!.,;:()[\]{}"'`]/g," ")
+.replace(/\s+/g," ")
+.trim();
+
+}
+
+
+/* ROMAN URDU */
+
+function romanUrdu(text){
+
+let map={
+
+"kya":"what",
+"kia":"what",
+"kiya":"what",
+
+"hai":"is",
+"hain":"are",
+
+"ka":"of",
+"ki":"of",
+"ke":"of",
+
+"ko":"to",
+"se":"from",
+
+"mein":"in",
+"main":"in",
+
+"par":"on",
+"pe":"on",
+
+"aur":"and",
+"ya":"or",
+
+"kaise":"how",
+"kaisay":"how",
+"kesay":"how",
+
+"kyun":"why",
+"kyu":"why",
+"kion":"why",
+
+"kab":"when",
+
+"kitna":"how much",
+"kitne":"how many",
+"kitni":"how many",
+
+"samjhao":"explain",
+"samjha":"explain",
+"samjhaao":"explain",
+
+"batao":"explain",
+"btao":"explain",
+
+"banao":"make",
+"banado":"make",
+
+"likho":"write",
+
+"jawab":"answer",
+"sawal":"question",
+
+"matlab":"meaning",
+
+"tarjuma":"translate",
+"tarjumah":"translate",
+
+"misal":"example",
+"misaal":"example",
+
+"asan":"simple",
+"asaan":"simple",
+
+"jumla":"sentence",
+"jumlay":"sentence",
+
+"lafz":"word",
+
+"ism":"noun",
+"zameer":"pronoun",
+"fail":"verb",
+"sifat":"adjective",
+
+"hazm":"digestion",
+"hazmi":"digestive",
+
+"jism":"body",
+
+"khalia":"cell",
+"khaliya":"cell",
+
+"roshni":"light",
+"pani":"water",
+
+"quwwat":"force",
+"kashish":"gravity",
+
+"zarra":"atom",
+
+"shabaka":"network",
+"rabta":"network",
+
+"mahol":"environment",
+
+"pauday":"plants",
+"poday":"plants",
+
+"ghiza":"food",
+"jandar":"organism",
+
+"zameen":"earth"
+
+};
+
+return text
+.split(" ")
+.map(word=>map[word]||word)
+.join(" ");
+
+}
+
+
+/* MAIN */
+
+function ask(){
+
+let q=document.getElementById("question").value.trim();
+
+if(!q){
+
+alert("Please write a question.");
+
+return;
+
+}
+
+let answer="";
+
+let original=q;
+
+let normalized=romanUrdu(clean(q));
+
+let lower=normalized;
+
+if(selectedSubject==="English"){
+
+answer=english(lower,original);
+
+}
+
+else if(selectedSubject==="Math"){
+
+answer=math(lower,original);
+
+}
+
+else if(selectedSubject==="Science"){
+
+answer=science(lower,original);
+
+}
+
+else if(selectedSubject==="Computer"){
+
+answer=computer(lower,original);
+
+}
+
+
+/* AUTOMATIC SUBJECT DETECTION */
+
+if(
+answer.includes("I don't know") ||
+answer==="")
+
+{
+
+if(
+/os|operating system|cpu|ram|network|internet|computer|html|css|javascript/.test(lower)
+){
+
+answer=computer(lower,original);
+
+}
+
+else if(
+/digest|photosynthesis|cell|atom|gravity|force|science|water cycle|ecosystem|respiration/.test(lower)
+){
+
+answer=science(lower,original);
+
+}
+
+else if(
+/algebra|equation|percentage|factor|quadratic|math|triangle|ratio|average|solve/.test(lower)
+){
+
+answer=math(lower,original);
+
+}
+
+else{
+
+answer=english(lower,original);
+
+}
+
+}
+
+
+document.getElementById("answer").innerHTML=answer;
+
+document.getElementById("answerBox").style.display="block";
+
+}
+
+
+/* ENGLISH */
+
+function english(q,original){
+
+if(q.includes("sentence")){
+
+if(q.includes("city")){
+
+return `
+<h2>📖 Sentence</h2>
+
+<div class="box">
+A simple sentence using <b>city</b> is:
+</div>
+
+<div class="final">
+<b>Islamabad is a beautiful city.</b>
+</div>
+`;
+
+}
+
+if(q.includes("school")){
+
+return `
+<h2>📖 Sentence</h2>
+
+<div class="final">
+<b>I go to school every day.</b>
+</div>
+`;
+
+}
+
+if(q.includes("book")){
+
+return `
+<h2>📖 Sentence</h2>
+
+<div class="final">
+<b>I am reading an interesting book.</b>
+</div>
+`;
+
+}
+
+if(q.includes("honest")){
+
+return `
+<h2>📖 Sentence</h2>
+
+<div class="final">
+<b>Ali is an honest boy.</b>
+</div>
+`;
+
+}
+
+return `
+<h2>📖 Sentence</h2>
+
+<div class="final">
+<b>I like the word you gave me.</b>
+</div>
+`;
+
+}
+
+
+if(q.includes("adverb")){
+
+return `
+<h2>📖 Adverb</h2>
+
+<div class="box">
+
+An <b>adverb</b> is a word that gives
+more information about a verb,
+adjective, or another adverb.
+
+</div>
+
+<div class="example">
+
+<b>Examples:</b><br><br>
+
+He runs <b>quickly</b>.<br>
+She sings <b>beautifully</b>.<br>
+He came <b>yesterday</b>.
+
+</div>
+`;
+
+}
+
+
+if(q.includes("conjunction")){
+
+return `
+<h2>📖 Conjunction</h2>
+
+<div class="box">
+
+A conjunction is a word used to
+join words, phrases, or sentences.
+
+</div>
+
+<div class="example">
+
+Examples:<br><br>
+
+<b>and</b><br>
+<b>but</b><br>
+<b>or</b><br>
+<b>because</b><br>
+<b>although</b>
+
+<br><br>
+
+Example sentence:
+
+I studied hard <b>because</b> I had a test.
+
+</div>
+`;
+
+}
+
+
+if(q.includes("noun")){
+
+return `
+<h2>📖 Noun</h2>
+
+<div class="box">
+
+A noun is the name of a person,
+place, animal, thing, or idea.
+
+</div>
+
+<div class="example">
+
+Ali — person<br>
+School — place<br>
+Cat — animal<br>
+Book — thing<br>
+Honesty — idea
+
+</div>
+`;
+
+}
+
+
+if(q.includes("pronoun")){
+
+return `
+<h2>📖 Pronoun</h2>
+
+<div class="box">
+
+A pronoun is used instead of a noun.
+
+</div>
+
+<div class="example">
+
+I, You, He, She, It, We, They
+
+<br><br>
+
+Ali is kind. <b>He</b> helps people.
+
+</div>
+`;
+
+}
+
+
+if(q.includes("verb")){
+
+return `
+<h2>📖 Verb</h2>
+
+<div class="box">
+
+A verb shows an action or state.
+
+</div>
+
+<div class="example">
+
+run<br>
+eat<br>
+write<br>
+play<br>
+think<br>
+is<br>
+are
+
+</div>
+`;
+
+}
+
+
+if(q.includes("adjective")){
+
+return `
+<h2>📖 Adjective</h2>
+
+<div class="box">
+
+An adjective describes a noun or pronoun.
+
+</div>
+
+<div class="example">
+
+beautiful<br>
+tall<br>
+red<br>
+clever
+
+<br><br>
+
+She has a <b>beautiful</b> dress.
+
+</div>
+`;
+
+}
+
+
+if(q.includes("tense")){
+
+return `
+<h2>📖 Tenses</h2>
+
+<div class="box">
+
+Tense tells us the time of an action.
+
+</div>
+
+<div class="example">
+
+<b>Present:</b><br>
+I play cricket.
+
+<br><br>
+
+<b>Past:</b><br>
+I played cricket.
+
+<br><br>
+
+<b>Future:</b><br>
+I will play cricket.
+
+</div>
+`;
+
+}
+
+
+if(q.includes("synonym")){
+
+return `
+<h2>📖 Synonym</h2>
+
+<div class="box">
+
+A synonym is a word with the same
+or similar meaning.
+
+</div>
+
+<div class="example">
+
+Big → Large<br>
+Happy → Glad<br>
+Quick → Fast
+
+</div>
+`;
+
+}
+
+
+if(q.includes("antonym")){
+
+return `
+<h2>📖 Antonym</h2>
+
+<div class="box">
+
+An antonym is a word with the opposite meaning.
+
+</div>
+
+<div class="example">
+
+Hot ↔️ Cold<br>
+Big ↔️ Small<br>
+Early ↔️ Late
+
+</div>
+`;
+
+}
+
+
+if(q.includes("active voice")){
+
+return `
+<h2>📖 Active Voice</h2>
+
+<div class="box">
+
+In active voice, the subject performs the action.
+
+</div>
+
+<div class="example">
+
+<b>Ali wrote the letter.</b>
+
+</div>
+`;
+
+}
+
+
+if(q.includes("passive voice")){
+
+return `
+<h2>📖 Passive Voice</h2>
+
+<div class="box">
+
+In passive voice, the focus is on the receiver
+of the action.
+
+</div>
+
+<div class="example">
+
+Active: Ali wrote the letter.
+
+<br><br>
+
+Passive: <b>The letter was written by Ali.</b>
+
+</div>
+`;
+
+}
+
+
+if(q.includes("meaning")){
+
+return `
+<h2>📚 Meaning</h2>
+
+<div class="box">
+
+Please write the word whose meaning
+you want to know.
+
+</div>
+
+<div class="example">
+
+Example:<br>
+
+<b>Meaning of justice</b>
+
+<br><br>
+
+Justice = fair treatment according
+to law or accepted rules.
+
+</div>
+`;
+
+}
+
+
+return `
+<h2>📖 English</h2>
+
+<div class="box">
+
+I can help with English grammar,
+sentences, meanings and vocabulary.
+
+</div>
+
+<div class="example">
+
+Try:<br><br>
+
+Make a sentence of city<br>
+Explain adverb<br>
+Explain conjunction<br>
+Explain tenses<br>
+Meaning of justice<br>
+Synonym of happy
+
+</div>
+`;
+
+}
+
+
+/* MATH */
+
+function math(q,original){
+
+let equation=original
+.replace(/\s/g,"")
+.match(/^([+-]?\d*\.?\d*)x([+-]\d*\.?\d*)=([+-]?\d*\.?\d*)$/);
+
+if(equation){
+
+let a=equation[1]===""||equation[1]==="+"?1:
+equation[1]==="-"?-1:
+Number(equation[1]);
+
+let b=Number(equation[2]);
+let c=Number(equation[3]);
+
+let x=(c-b)/a;
+
+return `
+<h2>📐 Algebra</h2>
+
+<div class="box">
+
+Equation:<br>
+
+<b>${original}</b>
+
+</div>
+
+<div class="box">
+
+Step 1:<br>
+
+${a}x = ${c-b}
+
+</div>
+
+<div class="box">
+
+Step 2:<br>
+
+x = ${c-b} ÷ ${a}
+
+</div>
+
+<div class="final">
+
+<b>Answer: x = ${x}</b>
+
+</div>
+`;
+
+}
+
+
+if(q.includes("algebra")){
+
+return `
+<h2>📐 Algebra</h2>
+
+<div class="box">
+
+Algebra uses letters and numbers
+to represent unknown values.
+
+</div>
+
+<div class="example">
+
+Example:
+
+<br><br>
+
+x + 5 = 12
+
+<br><br>
+
+x = 7
+
+</div>
+`;
+
+}
+
+
+if(q.includes("percentage")){
+
+return `
+<h2>📐 Percentage</h2>
+
+<div class="box">
+
+Percentage means a part out of 100.
+
+</div>
+
+<div class="example">
+
+Percentage =
+
+(part ÷ whole) × 100
+
+<br><br>
+
+20% = 20 ÷ 100 = 0.20
+
+</div>
+`;
+
+}
+
+
+if(q.includes("pythagorean")){
+
+return `
+<h2>📐 Pythagorean Theorem</h2>
+
+<div class="box">
+
+For a right-angled triangle:
+
+</div>
+
+<div class="final">
+
+<b>a² + b² = c²</b>
+
+</div>
+
+<div class="example">
+
+Example:
+
+3² + 4² = 5²
+
+9 + 16 = 25
+
+</div>
+`;
+
+}
+
+
+return `
+<h2>📐 Mathematics</h2>
+
+<div class="box">
+
+I can explain school mathematics,
+algebra, equations, geometry,
+percentages and more.
+
+</div>
+`;
+
+}
+
+
+/* SCIENCE */
+
+function science(q,original){
+
+if(q.includes("digest") || q.includes("hazm")){
+
+return `
+<h2>🔬 Human Digestive System</h2>
+
+<div class="box">
+
+The digestive system breaks food
+into smaller substances so the body
+can absorb and use nutrients.
+
+</div>
+
+<div class="example">
+
+<b>1. Mouth</b><br>
+Chewing breaks food into smaller pieces.
+Saliva begins digestion.
+
+<br><br>
+
+<b>2. Oesophagus</b><br>
+Moves food toward the stomach.
+
+<br><br>
+
+<b>3. Stomach</b><br>
+Mixes food with acid and digestive juices.
+
+<br><br>
+
+<b>4. Small intestine</b><br>
+Most digestion and nutrient absorption
+happen here.
+
+<br><br>
+
+<b>5. Large intestine</b><br>
+Absorbs much of the remaining water.
+
+<br><br>
+
+<b>6. Rectum and anus</b><br>
+Store and remove waste.
+
+</div>
+
+<div class="final">
+
+<b>Flow:</b><br><br>
+
+Mouth → Oesophagus → Stomach →
+Small Intestine → Large Intestine →
+Rectum → Anus
+
+</div>
+`;
+
+}
+
+
+if(q.includes("photosynthesis")){
+
+return `
+<h2>🌱 Photosynthesis</h2>
+
+<div class="box">
+
+Photosynthesis is the process by which
+green plants use light energy to make
+food from carbon dioxide and water.
+
+</div>
+
+<div class="example">
+
+Needs:<br>
+
+☀️ Sunlight<br>
+🌿 Chlorophyll<br>
+💧 Water<br>
+🌫️ Carbon dioxide
+
+<br><br>
+
+Produces:<br>
+
+🍬 Glucose<br>
+💨 Oxygen
+
+</div>
+`;
+
+}
+
+
+if(q.includes("cell")){
+
+return `
+<h2>🔬 Cell</h2>
+
+<div class="box">
+
+A cell is the basic structural and
+functional unit of living organisms.
+
+</div>
+
+<div class="example">
+
+<b>Nucleus:</b> contains genetic material.<br><br>
+
+<b>Cell membrane:</b> controls substances
+entering and leaving the cell.<br><br>
+
+<b>Cytoplasm:</b> where many chemical
+reactions occur.<br><br>
+
+<b>Mitochondria:</b> major site of aerobic
+energy release.
+
+</div>
+`;
+
+}
+
+
+if(q.includes("atom")){
+
+return `
+<h2>⚛️ Atom</h2>
+
+<div class="box">
+
+An atom is the basic unit of an element.
+
+</div>
+
+<div class="example">
+
+<b>Proton:</b> positive charge<br>
+
+<b>Neutron:</b> no charge<br>
+
+<b>Electron:</b> negative charge
+
+<br><br>
+
+Protons and neutrons are found
+in the nucleus.
+
+</div>
+`;
+
+}
+
+
+if(q.includes("gravity") || q.includes("kashish")){
+
+return `
+<h2>🌍 Gravity</h2>
+
+<div class="box">
+
+Gravity is an attractive force between
+masses. Earth's gravity pulls objects
+toward Earth.
+
+</div>
+
+<div class="example">
+
+That is why a ball thrown upward
+eventually comes back down.
+
+</div>
+`;
+
+}
+
+
+if(q.includes("force") || q.includes("quwwat")){
+
+return `
+<h2>⚙️ Force</h2>
+
+<div class="box">
+
+A force is a push or pull that can
+change an object's motion or shape.
+
+</div>
+
+<div class="final">
+
+SI unit of force = <b>Newton (N)</b>
+
+</div>
+`;
+
+}
+
+
+if(q.includes("water cycle")){
+
+return `
+<h2>💧 Water Cycle</h2>
+
+<div class="box">
+
+Water continuously moves between
+Earth's surface and atmosphere.
+
+</div>
+
+<div class="final">
+
+Evaporation → Condensation →
+Precipitation → Collection
+
+</div>
+`;
+
+}
+
+
+return `
+<h2>🔬 Science</h2>
+
+<div class="box">
+
+I can explain school science topics
+including biology, chemistry and physics.
+
+</div>
+
+<div class="example">
+
+Try:<br><br>
+
+Explain digestive system<br>
+Photosynthesis kya hai?<br>
+What is a cell?<br>
+What is an atom?<br>
+Gravity kya hai?<br>
+Explain water cycle
+
+</div>
+`;
+
+}
+
+
+/* COMPUTER */
+
+function computer(q,original){
+
+if(
+q==="os" ||
+q.includes("operating system")
+){
+
+return `
+<h2>💻 Operating System (OS)</h2>
+
+<div class="box">
+
+An Operating System is system software
+that manages computer hardware and
+provides an interface for applications.
+
+</div>
+
+<div class="example">
+
+<b>Main functions:</b>
+
+<br><br>
+
+* Memory management<br>
+* File management<br>
+* Process management<br>
+* Device management<br>
+* Security<br>
+* User interface
+
+</div>
+
+<div class="final">
+
+<b>Examples:</b>
+
+Windows, Linux, macOS,
+Android and iOS.
+
+</div>
+`;
+
+}
+
+
+if(q.includes("network")){
+
+return `
+<h2>🌐 Computer Network</h2>
+
+<div class="box">
+
+A computer network is a group of
+connected devices that communicate
+and share data or resources.
+
+</div>
+
+<div class="example">
+
+<b>LAN</b> = Local Area Network<br><br>
+
+<b>WAN</b> = Wide Area Network<br><br>
+
+Router = connects networks<br>
+
+Switch = connects devices
+within a local network
+
+</div>
+`;
+
+}
+
+
+if(q.includes("cpu")){
+
+return `
+<h2>💻 CPU</h2>
+
+<div class="box">
+
+CPU stands for Central Processing Unit.
+
+It executes instructions and performs
+calculations and logical operations.
+
+</div>
+`;
+
+}
+
+
+if(q.includes("ram")){
+
+return `
+<h2>💾 RAM</h2>
+
+<div class="box">
+
+RAM is temporary working memory used
+by active programs and data.
+
+</div>
+
+<div class="final">
+
+RAM is generally <b>volatile</b> memory.
+
+</div>
+`;
+
+}
+
+
+if(q.includes("binary")){
+
+return `
+<h2>0️⃣ Binary</h2>
+
+<div class="box">
+
+Binary is a base-2 number system
+that uses only 0 and 1.
+
+</div>
+
+<div class="final">
+
+<b>8 bits = 1 byte</b>
+
+</div>
+`;
+
+}
+
+
+if(q.includes("algorithm")){
+
+return `
+<h2>🧩 Algorithm</h2>
+
+<div class="box">
+
+An algorithm is a clear sequence
+of steps used to solve a problem.
+
+</div>
+
+<div class="example">
+
+Example:
+
+<br><br>
+
+1. Start<br>
+2. Take two numbers<br>
+3. Add them<br>
+4. Display answer<br>
+5. Stop
+
+</div>
+`;
+
+}
+
+
+if(q.includes("html")){
+
+return `
+<h2>🌐 HTML</h2>
+
+<div class="box">
+
+HTML stands for HyperText Markup Language.
+
+It is used to structure web pages.
+
+</div>
+`;
+
+}
+
+
+if(q.includes("css")){
+
+return `
+<h2>🎨 CSS</h2>
+
+<div class="box">
+
+CSS stands for Cascading Style Sheets.
+
+It controls the design and layout
+of web pages.
+
+</div>
+`;
+
+}
+
+
+if(q.includes("javascript")){
+
+return `
+<h2>⚡ JavaScript</h2>
+
+<div class="box">
+
+JavaScript is a programming language
+used to add logic and interactivity
+to websites.
+
+</div>
+`;
+
+}
+
+
+return `
+<h2>💻 Computer</h2>
+
+<div class="box">
+
+I can explain OS, CPU, RAM, networks,
+Internet, binary, algorithms, HTML,
+CSS and JavaScript.
+
+</div>
+
+<div class="example">
+
+Try:<br><br>
+
+OS kya hai?<br>
+Computer network samjhao<br>
+CPU kya hota hai?<br>
+RAM kya hai?<br>
+Binary kya hai?
+
+</div>
+`;
+
+}
+
+</script>
+
+</body>
+</html>
